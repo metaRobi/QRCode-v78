@@ -1,43 +1,43 @@
 using Meta.XR.MRUtilityKit;
-using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine;
 using System;
 
-[DisallowMultipleComponent]
 public sealed class QrCode : MonoBehaviour
 {
-    [SerializeField] Text payloadText, trackingText;
-    [SerializeField] LineRenderer line;
-    [SerializeField] RectTransform canvas;
+    [SerializeField] private Text payloadText, trackingText;
+    [SerializeField] private LineRenderer line;
+    [SerializeField] private RectTransform canvas;
 
-    MRUKTrackable trackable;
-    Rect cachedRect;
-    bool lastTracked;
+    private MRUKTrackable _trackable;
+    private Rect _cachedRect;
+    private bool _lastTracked;
 
-    public void Initialize(MRUKTrackable t)
+    public void Initialize(MRUKTrackable trackedQrCode)
     {
-        trackable = t;
-        payloadText.text = !string.IsNullOrEmpty(t.MarkerPayloadString)
-            ? $"\"{t.MarkerPayloadString}\""
-            : FormatBytes(t.MarkerPayloadBytes);
+        _trackable = trackedQrCode;
+        payloadText.text = !string.IsNullOrEmpty(trackedQrCode.MarkerPayloadString)
+            ? $"\"{trackedQrCode.MarkerPayloadString}\""
+            : FormatBytes(trackedQrCode.MarkerPayloadBytes);
 
-        line.loop = true; // LineRenderer closes the square for us
+        line.loop = true;
     }
 
     private void Update()
     {
-        if (trackable == null) return;
-
-        // tracking state text
-        if (trackable.IsTracked != lastTracked)
-            trackingText.text = (lastTracked == trackable.IsTracked) ? "Tracked" : "Untracked";
-
-        if (trackable.PlaneRect is not { } r || r == cachedRect)
+        if (!_trackable)
         {
             return;
         }
-        
-        cachedRect = r;
+
+        trackingText.text = _trackable.IsTracked ? "Tracked" : "Untracked";
+
+        if (_trackable.PlaneRect is not { } r || r == _cachedRect)
+        {
+            return;
+        }
+
+        _cachedRect = r;
         DrawBox();
         MoveCanvas();
     }
@@ -58,10 +58,10 @@ public sealed class QrCode : MonoBehaviour
     {
         line.SetPositions(new[]
         {
-            new Vector3(cachedRect.xMin, cachedRect.yMin, 0),
-            new Vector3(cachedRect.xMax, cachedRect.yMin, 0),
-            new Vector3(cachedRect.xMax, cachedRect.yMax, 0),
-            new Vector3(cachedRect.xMin, cachedRect.yMax, 0)
+            new Vector3(_cachedRect.xMin, _cachedRect.yMin, 0),
+            new Vector3(_cachedRect.xMax, _cachedRect.yMin, 0),
+            new Vector3(_cachedRect.xMax, _cachedRect.yMax, 0),
+            new Vector3(_cachedRect.xMin, _cachedRect.yMax, 0)
         });
     }
 
@@ -71,10 +71,10 @@ public sealed class QrCode : MonoBehaviour
         {
             return;
         }
-        
+
         canvas.localPosition = new Vector3(
-            cachedRect.center.x * canvas.localScale.x,
-            cachedRect.yMin * canvas.localScale.y,
+            _cachedRect.center.x * canvas.localScale.x,
+            _cachedRect.yMin * canvas.localScale.y,
             canvas.localPosition.z);
     }
 }
